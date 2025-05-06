@@ -12,7 +12,6 @@ class EC2InstanceConstruct(Construct):
         id: str,
         *,
         vpc: ec2.Vpc,
-        subnet: ec2.ISubnet,
         **kwargs
     ):
         super().__init__(scope, id, **kwargs)
@@ -44,7 +43,7 @@ class EC2InstanceConstruct(Construct):
             instance_type=ec2.InstanceType("t3.micro"),
             machine_image=ec2.MachineImage.latest_amazon_linux2(),
             vpc=vpc,
-            vpc_subnets=ec2.SubnetSelection(subnets=[subnet]),
+            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC),
             security_group=self.security_group,
         )
         

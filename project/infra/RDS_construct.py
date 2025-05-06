@@ -17,7 +17,6 @@ class RDSInstanceConstruct(Construct):
         id: str,
         *,
         vpc: ec2.Vpc,
-        subnet: ec2.ISubnet,
         db_name: str,
         db_username: str,
         db_password: str,
@@ -42,9 +41,9 @@ class RDSInstanceConstruct(Construct):
         self.rds_instance = rds.DatabaseInstance(
             self, id,
             engine=rds.DatabaseInstanceEngine.POSTGRES,
-            instance_type=ec2.InstanceType("db.t3.micro"),
+            instance_type=ec2.InstanceType("t3.micro"),
             vpc=vpc,
-            vpc_subnets=ec2.SubnetSelection(subnets=[subnet]),
+            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS),
             database_name=db_name,
             credentials=rds.Credentials.from_password(
                 username=db_username,  

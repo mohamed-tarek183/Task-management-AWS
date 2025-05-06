@@ -19,9 +19,8 @@ class infra_stack(NestedStack):
     def __init__(self, scope: Construct, id: str, **kwargs):
         super().__init__(scope, id, **kwargs)
 
-        #VPC setup with 2 AZs , 2 subnets in each AZ (1 Private, 1 Public)
         self.vpc=ec2.Vpc(self,"MyVPC",
-        max_azs=1,
+        max_azs=2,
         nat_gateways=0,
         subnet_configuration=[
                 ec2.SubnetConfiguration(
@@ -37,31 +36,35 @@ class infra_stack(NestedStack):
             ]
         )
 
-        public_subnets = self.vpc.select_subnets(subnet_type=ec2.SubnetType.PUBLIC).subnets
-        private_subnets = self.vpc.select_subnets(subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS).subnets
 
+        self.ec2=EC2InstanceConstruct(self, "EC2",vpc=self.vpc)
 
-        self.ec2=EC2InstanceConstruct(self, "EC2",
-                vpc=self.vpc,
-                subnet=public_subnets[0],
+        
+        
+
+        self.rds=RDSInstanceConstruct(self,"RDS",
+                             vpc=self.vpc,
+                             db_name="Task_Mangement",
+                             db_username="adminusr",
+                             db_password="adminpwrd"
         )
-
-        
-        
-
-        # self.rds=RDSInstanceConstruct(self,"RDS",
-        #                      vpc=self.vpc,
-        #                      subnet=private_subnets[0],
-        #                      db_name="Task_Mangement",
-        #                      db_username="admin",
-        #                      db_password="admin"
-        # )
 
         self.s3=s3.Bucket(self,"Task_Mangement_Attachments",
                         removal_policy=RemovalPolicy.DESTROY,  # For dev/testing — delete bucket on stack destroy
                         auto_delete_objects=True)
         
+        self.dynamo_db=dynamodb.TableV2(self,"Task_Metadata",
+                                        partition_key=dynamodb.Attribute(
+                                        name="task_id",
+                                        type=dynamodb.AttributeType.NUMBER
+                                        ),table_name="metadata",
+                                        billing=dynamodb.Billing.on_demand(),
+                                        removal_policy=RemovalPolicy.DESTROY    
+                                        )
 
-        # self.vpc.add_gateway_endpoint("S3_Endpoint",
-        #                     service=ec2.GatewayVpcEndpointAwsService.S3,
-        #                     subnets=[private_subnets[0]],)
+
+        self.vpc.add_gateway_endpoint("S3_Endpoint",
+                            service=ec2.GatewayVpcEndpointAwsService.S3)
+        
+        self.vpc.add_gateway_endpoint("DynamoDB_Endpoint",
+                            service=ec2.GatewayVpcEndpointAwsService.DYNAMODB)
