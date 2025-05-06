@@ -4,16 +4,11 @@ from aws_cdk import (
     # aws_sqs as sqs,
 )
 from constructs import Construct
+from project.infra.infra_stack import infra_stack
 
 class ProjectStack(Stack):
 
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        # The code that defines your stack goes here
-
-        # example resource
-        # queue = sqs.Queue(
-        #     self, "ProjectQueue",
-        #     visibility_timeout=Duration.seconds(300),
-        # )
+        self.infra = infra_stack(self, "InfraStack")
