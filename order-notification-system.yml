@@ -1,0 +1,123 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Event-Driven Order Notification System
+
+Resources:
+
+  OrdersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Orders
+      AttributeDefinitions:
+        - AttributeName: orderId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: orderId
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
+  OrderTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: OrderTopic
+
+  OrderDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: OrderDLQ
+
+  OrderQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: OrderQueue
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt OrderDLQ.Arn
+        maxReceiveCount: 3
+
+  QueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref OrderQueue
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: "*"
+            Action: "sqs:SendMessage"
+            Resource: !GetAtt OrderQueue.Arn
+            Condition:
+              ArnEquals:
+                aws:SourceArn: !Ref OrderTopic
+
+  OrderQueueSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref OrderTopic
+      Protocol: sqs
+      Endpoint: !GetAtt OrderQueue.Arn
+      RawMessageDelivery: true
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: LambdaExecutionRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  OrderProcessorFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: OrderProcessorFunction
+      Runtime: python3.12
+      Handler: lambda_function.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Code:
+        ZipFile: |
+          import json
+          import boto3
+
+          dynamodb = boto3.resource('dynamodb')
+          table = dynamodb.Table('Orders')
+
+          def lambda_handler(event, context):
+              for record in event['Records']:
+                  body = json.loads(record['body'])
+                  print("Received order:", body)
+
+                  table.put_item(Item={
+                      'orderId': body['orderId'],
+                      'userId': body['userId'],
+                      'itemName': body['itemName'],
+                      'quantity': body['quantity'],
+                      'status': body['status'],
+                      'timestamp': body['timestamp']
+                  })
+                  print(f"Order {body['orderId']} stored successfully.")
+              return {'statusCode': 200, 'body': 'Success'}
+
+      Timeout: 10
+      MemorySize: 128
+      Events:
+        SQSTrigger:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt OrderQueue.Arn
+
+Outputs:
+  TopicArn:
+    Description: SNS Topic ARN
+    Value: !Ref OrderTopic
+  QueueURL:
+    Description: SQS Queue URL
+    Value: !Ref OrderQueue
+  LambdaName:
+    Description: Lambda Function Name
+    Value: !Ref OrderProcessorFunction
