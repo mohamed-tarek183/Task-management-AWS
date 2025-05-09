@@ -35,8 +35,6 @@ class EC2InstanceConstruct(Construct):
                 connection=ec2.Port.tcp(80),
                 description="Allow HTTP access"
             )
-        
-
 
         self.instance = ec2.Instance(
             self, id,
