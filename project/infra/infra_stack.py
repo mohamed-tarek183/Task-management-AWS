@@ -13,6 +13,8 @@ from aws_cdk import aws_elasticloadbalancingv2 as elbv2
 from .EC2_construct import EC2InstanceConstruct
 
 from .RDS_construct import RDSInstanceConstruct
+from .cognito_construct import UserPoolConstruct
+from aws_cdk import CfnOutput
 
 
 class infra_stack(NestedStack):
@@ -68,3 +70,10 @@ class infra_stack(NestedStack):
         
         self.vpc.add_gateway_endpoint("DynamoDB_Endpoint",
                             service=ec2.GatewayVpcEndpointAwsService.DYNAMODB)
+
+        self.cognito = UserPoolConstruct(self, "Cognito")
+
+#for frontend integration later on
+#outputs user pool id and user pool client id in terminal 
+        CfnOutput(self, "UserPoolId", value=self.cognito.user_pool.user_pool_id)
+        CfnOutput(self, "UserPoolClientId", value=self.cognito.user_pool_client.user_pool_client_id)
