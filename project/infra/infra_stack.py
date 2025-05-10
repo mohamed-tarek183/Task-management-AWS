@@ -4,6 +4,7 @@ from aws_cdk import (
     NestedStack,
     RemovalPolicy
 )
+import aws_cdk.aws_secretsmanager as secretsmanager
 
 from aws_cdk import aws_ec2 as ec2, aws_iam as iam
 from aws_cdk import aws_s3 as s3
@@ -35,12 +36,7 @@ class infra_stack(NestedStack):
                 )
             ]
         )
-
-
         self.ec2=EC2InstanceConstruct(self, "EC2",vpc=self.vpc)
-
-        
-        
 
         self.rds=RDSInstanceConstruct(self,"RDS",
                              vpc=self.vpc,
@@ -56,7 +52,7 @@ class infra_stack(NestedStack):
         self.dynamo_db=dynamodb.TableV2(self,"Task_Metadata",
                                         partition_key=dynamodb.Attribute(
                                         name="task_id",
-                                        type=dynamodb.AttributeType.NUMBER
+                                        type=dynamodb.AttributeType.STRING
                                         ),table_name="metadata",
                                         billing=dynamodb.Billing.on_demand(),
                                         removal_policy=RemovalPolicy.DESTROY    
@@ -68,3 +64,14 @@ class infra_stack(NestedStack):
         
         self.vpc.add_gateway_endpoint("DynamoDB_Endpoint",
                             service=ec2.GatewayVpcEndpointAwsService.DYNAMODB)
+        
+
+
+        self.dynamo_table=self.dynamo_db.table_name
+        self.rds_host=self.rds.rds_host
+        self.rds_port=self.rds.rds_port
+        self.rds_db_name="Task_Mangement"
+        self.rds_username="adminusr"
+        self.rds_password="adminpwrd"
+        self.s3_arn=self.s3.bucket_arn
+        

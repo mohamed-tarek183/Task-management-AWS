@@ -8,6 +8,7 @@ from aws_cdk import (
 
 )
 from constructs import Construct
+import aws_cdk.aws_secretsmanager as secretsmanager
 
 
 class RDSInstanceConstruct(Construct):
@@ -55,6 +56,9 @@ class RDSInstanceConstruct(Construct):
             removal_policy=RemovalPolicy.RETAIN, 
             publicly_accessible=False 
         )
+
+        self.rds_host=self.rds_instance.db_instance_endpoint_address
+        self.rds_port=self.rds_instance.db_instance_endpoint_port
       
 
 

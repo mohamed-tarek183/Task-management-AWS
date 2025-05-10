@@ -37,6 +37,13 @@ class EC2InstanceConstruct(Construct):
             )
         
 
+        key_pair = ec2.KeyPair.from_key_pair_name(
+            self, 
+            "ImportedKeyPair",
+            key_pair_name="mohtarek"  # This should match the name in AWS console
+        )
+        
+
 
         self.instance = ec2.Instance(
             self, id,
@@ -45,6 +52,7 @@ class EC2InstanceConstruct(Construct):
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC),
             security_group=self.security_group,
+            key_name=key_pair.key_pair_name
         )
         
 
