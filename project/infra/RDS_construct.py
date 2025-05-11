@@ -58,14 +58,14 @@ class RDSInstanceConstruct(Construct):
             engine=rds.DatabaseInstanceEngine.postgres(
                 version=rds.PostgresEngineVersion.VER_14  # RDS Version
             ),
-            instance_type=ec2.InstanceType("t3.micro"),  # Updated from t2.micro to t3.micro
+            instance_type=ec2.InstanceType("t3.micro"),
             vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS),
             database_name=db_name,
             credentials=rds.Credentials.from_secret(self.db_credentials),
             multi_az=False,
             allocated_storage=20,
             security_groups=[self.security_group],
-            removal_policy=RemovalPolicy.RETAIN,
+            removal_policy=RemovalPolicy.DESTROY,
             publicly_accessible=False,
             deletion_protection=False,  # Set to True for production
             backup_retention=Duration.days(7)

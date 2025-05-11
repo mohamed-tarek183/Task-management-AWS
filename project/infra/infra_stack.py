@@ -5,6 +5,8 @@ from aws_cdk import (
     RemovalPolicy
 )
 
+import os
+import time
 from aws_cdk import aws_ec2 as ec2, aws_iam as iam
 from aws_cdk import aws_s3 as s3
 from aws_cdk import aws_dynamodb as dynamodb
@@ -13,10 +15,10 @@ from aws_cdk import aws_elasticloadbalancingv2 as elbv2
 from .EC2_construct import EC2InstanceConstruct
 from .RDS_construct import RDSInstanceConstruct
 from .IAM_construct import IAMConstruct
-# from .Cognito_construct import CognitoConstruct
-# from .Lambda_APIGateway_construct import LambdaApiGatewayConstruct
-# from .SQS_construct import SQSConstruct
-# from .CloudWatch_construct import CloudWatchConstruct
+from .Cognito_construct import CognitoConstruct
+from .Lambda_APIGateway_construct import LambdaApiGatewayConstruct
+from .SQS_construct import SQSConstruct
+from .CloudWatch_construct import CloudWatchConstruct
 
 
 class infra_stack(NestedStack):
@@ -93,8 +95,10 @@ class infra_stack(NestedStack):
         self.rds = RDSInstanceConstruct(self, "RDS",
                                         vpc=self.vpc,
                                         db_name="TaskManagement",
-                                        db_username="adminusr",
-                                        db_password="adminpwrd"
+                                        db_username=os.environ.get('DB_USERNAME', 'adminusr'),
+                                        # Use environment variable with fallback
+                                        db_password=os.environ.get('DB_PASSWORD', 'temp' + str(int(time.time())))
+                                        # Generate random password if not provided
                                         )
 
         # Grant EC2 access to RDS
@@ -105,32 +109,34 @@ class infra_stack(NestedStack):
         )
 
         # Create Cognito User Pool for authentication
-        # self.cognito = CognitoConstruct(self, "Cognito")
+        self.cognito = CognitoConstruct(self, "Cognito")
 
         # Create SQS for notifications
-        # self.sqs = SQSConstruct(self, "SQS",
-                               # lambda_role=self.iam.lambda_role)
+        self.sqs = SQSConstruct(self, "SQS",
+                                lambda_role=self.iam.lambda_role)
 
         # Create Lambda functions and API Gateway
-        # self.lambda_api = LambdaApiGatewayConstruct(self, "LambdaAPI",
-        #                                             cognito_user_pool=self.cognito.user_pool,
-        #                                             dynamo_table=self.dynamo_db,
-        #                                             s3_bucket=self.s3,
-        #                                             notification_queue=self.sqs.notification_queue,
-        #                                             lambda_role=self.iam.lambda_role)
+        self.lambda_api = LambdaApiGatewayConstruct(self, "LambdaAPI",
+                                                    cognito_user_pool=self.cognito.user_pool,
+                                                    dynamo_table=self.dynamo_db,
+                                                    s3_bucket=self.s3,
+                                                    notification_queue=self.sqs.notification_queue,
+                                                    lambda_role=self.iam.lambda_role)
 
         # Set up CloudWatch monitoring
-        # lambda_functions = [
-        #     self.lambda_api.get_tasks_lambda,
-        #     self.lambda_api.get_task_lambda,
-        #     self.lambda_api.create_task_lambda,
-        #     self.lambda_api.update_task_lambda,
-        #     self.lambda_api.delete_task_lambda,
-        #     self.lambda_api.upload_attachment_lambda,
-        #     self.sqs.notification_processor
-        # ]
+        lambda_functions = [
+            self.lambda_api.get_tasks_lambda,
+            self.lambda_api.get_task_lambda,
+            self.lambda_api.create_task_lambda,
+            self.lambda_api.update_task_lambda,
+            self.lambda_api.delete_task_lambda,
+            self.lambda_api.upload_attachment_lambda,
+            self.sqs.notification_processor
+        ]
 
-        # self.cloudwatch = CloudWatchConstruct(self, "CloudWatch",
-        #                                       api=self.lambda_api.api,
-        #                                       lambda_functions=lambda_functions,
-        #                                       dynamodb_table=self.dynamo_db)
+        self.cloudwatch = CloudWatchConstruct(self, "CloudWatch",
+                                              api=self.lambda_api.api,
+                                              lambda_functions=lambda_functions,
+                                              dynamodb_table=self.dynamo_db,
+                                              s3_bucket=self.s3,
+                                              sqs_queue=self.sqs.notification_queue)
