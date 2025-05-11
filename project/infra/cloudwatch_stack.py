@@ -84,8 +84,13 @@ def handler(event, context):
             actions=[cw_actions.SnsAction(topic)]  # Send notification to SNS
         )
 
-        # EC2 Monitoring
-        instance = ec2.Instance(self, "MyEC2Instance", ...)  # Replace with actual EC2 creation logic
+        # EC2 Monitoring (Dynamic Reference)
+        instance = ec2.Instance(self, "MyEC2Instance", 
+            instance_type=ec2.InstanceType("t3.micro"),
+            machine_image=ec2.MachineImage.latest_amazon_linux2(),
+            vpc=ec2.Vpc(self, "MyVpc"),
+            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC)
+        )
         ec2_metric = cw.Metric(
             namespace="AWS/EC2",
             metric_name="CPUUtilization",
@@ -103,8 +108,14 @@ def handler(event, context):
             actions=[cw_actions.SnsAction(topic)]  # Send notification to SNS
         )
 
-        # RDS Monitoring
-        rds_instance = rds.DatabaseInstance(self, "MyRDSInstance", ...)  # Replace with actual RDS creation logic
+        # RDS Monitoring (Dynamic Reference)
+        rds_instance = rds.DatabaseInstance(self, "MyRDSInstance", 
+            instance_type=ec2.InstanceType("t3.micro"),
+            engine=rds.DatabaseInstanceEngine.POSTGRES,
+            vpc=ec2.Vpc(self, "MyVpc"),
+            database_name="taskmanagement_db",
+            credentials=rds.Credentials.from_username("admin")
+        )
         rds_metric = cw.Metric(
             namespace="AWS/RDS",
             metric_name="CPUUtilization",
@@ -122,11 +133,18 @@ def handler(event, context):
             actions=[cw_actions.SnsAction(topic)]  # Send notification to SNS
         )
 
-        # DynamoDB Monitoring
+        # DynamoDB Monitoring (Dynamic Reference)
+        dynamo_table = dynamodb.Table(
+            self, "TaskMetadata",
+            partition_key=dynamodb.Attribute(name="task_id", type=dynamodb.AttributeType.NUMBER),
+            table_name="Task_Metadata",
+            billing=dynamodb.BillingMode.PAY_PER_REQUEST
+        )
+
         dynamo_read_metric = cw.Metric(
             namespace="AWS/DynamoDB",
             metric_name="ConsumedReadCapacityUnits",
-            dimensions_map={"TableName": "Task_Metadata"},
+            dimensions_map={"TableName": dynamo_table.table_name},
             statistic="Sum",
             period=Duration.minutes(5),
         )
@@ -134,7 +152,7 @@ def handler(event, context):
         dynamo_throttled_metric = cw.Metric(
             namespace="AWS/DynamoDB",
             metric_name="ThrottledRequests",
-            dimensions_map={"TableName": "Task_Metadata"},
+            dimensions_map={"TableName": dynamo_table.table_name},
             statistic="Sum",
             period=Duration.minutes(5),
         )
@@ -148,8 +166,8 @@ def handler(event, context):
             actions=[cw_actions.SnsAction(topic)]  # Send notification to SNS
         )
 
-        # S3 Monitoring
-        s3_bucket = s3.Bucket(self, "TaskAttachmentsBucket", ...)
+        # S3 Monitoring (Dynamic Reference)
+        s3_bucket = s3.Bucket(self, "TaskAttachmentsBucket")
         s3_put_metric = cw.Metric(
             namespace="AWS/S3",
             metric_name="PutRequest",
@@ -167,8 +185,8 @@ def handler(event, context):
             actions=[cw_actions.SnsAction(topic)]  # Send notification to SNS
         )
 
-        # SQS Monitoring
-        sqs_queue = sqs.Queue(self, "TaskQueue", ...)  # Replace with actual SQS creation logic
+        # SQS Monitoring (Dynamic Reference)
+        sqs_queue = sqs.Queue(self, "TaskQueue")
         sqs_messages_metric = cw.Metric(
             namespace="AWS/SQS",
             metric_name="ApproximateNumberOfMessagesVisible",
