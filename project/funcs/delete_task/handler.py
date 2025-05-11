@@ -25,7 +25,7 @@ def main(event, context):
     task_id = event["pathParameters"]["id"]
     table.delete_item(Key={"task_id": task_id})
 
-    cur.execute("DELETE FROM user_tasks WHERE task_id = %s", (task_id))
+    cur.execute("DELETE FROM user_tasks WHERE task_id = %s", (task_id,))
 
 
     conn.commit()

@@ -58,11 +58,11 @@ class lambda_stack(NestedStack):
 
 
         self.delete_func.add_to_role_policy(iam.PolicyStatement(
-        actions=["dynamodb:PutItem"],
+        actions=["dynamodb:DeleteItem"],
         resources=["arn:aws:dynamodb:eu-central-1:614965295050:table/metadata"]
     ))
         
         self.create_func.add_to_role_policy(iam.PolicyStatement(
-        actions=["dynamodb:DeleteItem"],
+        actions=["dynamodb:PutItem"],
         resources=["arn:aws:dynamodb:eu-central-1:614965295050:table/metadata"]
     ))
