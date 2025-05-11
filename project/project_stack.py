@@ -77,7 +77,9 @@ class ProjectStack(Stack):
                    "DB_HOST":self.infra.rds_host,
                    "DB_NAME":self.infra.rds_db_name,
                    "DB_USER":self.infra.rds_username,
-                   "DB_PASSWORD":self.infra.rds_password}
+                   "DB_PASSWORD":self.infra.rds_password,
+                   "S3_BUCKET":self.infra.s3_bucket_name,
+                   "S3_ARN":self.infra.s3_arn}
 
       
         self.lambda_funcs=lambda_stack(self,"LambdaStack",db_config=db_config,vpc=self.infra.vpc)

@@ -41,7 +41,7 @@ def main(event, context):
         }
 
         table.put_item(Item=item)
-        cur.execute("CREATE TABLE IF NOT EXISTS user_tasks(user_id UUID PRIMARY KEY , task_id UUID)")
+        cur.execute("CREATE TABLE IF NOT EXISTS user_tasks (user_id UUID, task_id UUID, PRIMARY KEY (user_id, task_id));")
         cur.execute("INSERT INTO user_tasks (user_id, task_id) VALUES (%s, %s)", (body['user_id'], task_id))
         conn.commit()
         cur.close()

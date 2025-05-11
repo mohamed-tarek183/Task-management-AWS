@@ -53,7 +53,7 @@ class RDSInstanceConstruct(Construct):
             multi_az=False,
             allocated_storage=20, 
             security_groups=[self.security_group], 
-            removal_policy=RemovalPolicy.RETAIN, 
+            removal_policy=RemovalPolicy.DESTROY, 
             publicly_accessible=False 
         )
 

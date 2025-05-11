@@ -36,6 +36,9 @@ class infra_stack(NestedStack):
                 )
             ]
         )
+
+        self.vpc.apply_removal_policy(RemovalPolicy.DESTROY)
+
         self.ec2=EC2InstanceConstruct(self, "EC2",vpc=self.vpc)
 
         self.rds=RDSInstanceConstruct(self,"RDS",
@@ -74,4 +77,5 @@ class infra_stack(NestedStack):
         self.rds_username="adminusr"
         self.rds_password="adminpwrd"
         self.s3_arn=self.s3.bucket_arn
+        self.s3_bucket_name=self.s3.bucket_name
         

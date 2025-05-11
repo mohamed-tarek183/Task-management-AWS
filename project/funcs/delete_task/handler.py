@@ -21,8 +21,7 @@ def main(event, context):
     cur = conn.cursor()
 
     
-    # Scan the DynamoDB table to get all tasks
-    task_id = event["pathParameters"]["id"]
+    task_id = event["pathParameters"]["task_id"]
     table.delete_item(Key={"task_id": task_id})
 
     cur.execute("DELETE FROM user_tasks WHERE task_id = %s", (task_id,))
