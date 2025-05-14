@@ -67,49 +67,44 @@ class CloudWatchConstruct(Construct):
                 )
             )
 
-        # Add S3 bucket metrics if provided
+       # Add S3 bucket metrics dynamically
         if s3_bucket:
             self.dashboard.add_widgets(
                 cloudwatch.GraphWidget(
                     title="S3 Bucket Size",
                     left=[
                         s3_bucket.metric("BucketSizeBytes",
-                                         statistic="sum",
-                                         period=Duration.days(1),
-                                         unit=cloudwatch.Unit.BYTES
-                                         )
+                                        statistic="sum",
+                                        period=Duration.days(1),
+                                        unit=cloudwatch.Unit.BYTES)
                     ]
                 ),
                 cloudwatch.GraphWidget(
                     title="S3 Number of Objects",
                     left=[
                         s3_bucket.metric("NumberOfObjects",
-                                         statistic="sum",
-                                         period=Duration.days(1),
-                                         unit=cloudwatch.Unit.COUNT
-                                         )
+                                        statistic="sum",
+                                        period=Duration.days(1),
+                                        unit=cloudwatch.Unit.COUNT)
                     ]
                 ),
                 cloudwatch.GraphWidget(
                     title="S3 Requests",
                     left=[
                         s3_bucket.metric("AllRequests",
-                                         statistic="sum",
-                                         period=Duration.minutes(5)
-                                         ),
+                                        statistic="sum",
+                                        period=Duration.minutes(5)),
                         s3_bucket.metric("GetRequests",
-                                         statistic="sum",
-                                         period=Duration.minutes(5)
-                                         ),
+                                        statistic="sum",
+                                        period=Duration.minutes(5)),
                         s3_bucket.metric("PutRequests",
-                                         statistic="sum",
-                                         period=Duration.minutes(5)
-                                         )
+                                        statistic="sum",
+                                        period=Duration.minutes(5))
                     ]
                 )
             )
 
-            # Create S3 error rate alarm
+            # Create S3 error rate alarm dynamically (based on 4xxErrors)
             self.s3_error_alarm = cloudwatch.Alarm(
                 self, "S3ErrorRateAlarm",
                 metric=s3_bucket.metric("4xxErrors"),
@@ -118,6 +113,7 @@ class CloudWatchConstruct(Construct):
                 alarm_description="Alarm if S3 bucket has too many 4XX errors",
                 alarm_name="S3ClientErrorRate"
             )
+
 
         # Add SQS queue metrics if provided
         if sqs_queue:
