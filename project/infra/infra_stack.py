@@ -55,24 +55,11 @@ class infra_stack(NestedStack):
                                               name="task_id",
                                               type=dynamodb.AttributeType.STRING
                                           ),
-                                          sort_key=dynamodb.Attribute(
-                                              name="user_id",
-                                              type=dynamodb.AttributeType.STRING
-                                          ),
                                           table_name="task_metadata",
                                           billing=dynamodb.Billing.on_demand(),
                                           removal_policy=RemovalPolicy.DESTROY
                                           )
 
-        # Add Global Secondary Index for querying by user_id
-        self.dynamo_db.add_global_secondary_index(
-            index_name="user_id-index",
-            partition_key=dynamodb.Attribute(
-                name="user_id",
-                type=dynamodb.AttributeType.STRING
-            ),
-            projection_type=dynamodb.ProjectionType.ALL
-        )
 
         # Add VPC Endpoints for S3 and DynamoDB
         self.vpc.add_gateway_endpoint("S3_Endpoint",
@@ -95,10 +82,8 @@ class infra_stack(NestedStack):
         self.rds = RDSInstanceConstruct(self, "RDS",
                                         vpc=self.vpc,
                                         db_name="TaskManagement",
-                                        db_username=os.environ.get('DB_USERNAME', 'adminusr'),
-                                        # Use environment variable with fallback
-                                        db_password=os.environ.get('DB_PASSWORD', 'temp' + str(int(time.time())))
-                                        # Generate random password if not provided
+                                        db_username='adminusr',
+                                        db_password='adminpwrd'
                                         )
 
         # Grant EC2 access to RDS
@@ -114,6 +99,12 @@ class infra_stack(NestedStack):
         # Create SQS for notifications
         self.sqs = SQSConstruct(self, "SQS",
                                 lambda_role=self.iam.lambda_role)
+        
+
+        DB_CREDS={"DB_HOST":self.rds.DB_HOST,
+                  "DB_NAME":self.rds.DB_NAME,
+                  "DB_USER":self.rds.DB_USER,
+                  "DB_PASS":self.rds.DB_PASS}
 
         # Create Lambda functions and API Gateway
         self.lambda_api = LambdaApiGatewayConstruct(self, "LambdaAPI",
@@ -121,7 +112,10 @@ class infra_stack(NestedStack):
                                                     dynamo_table=self.dynamo_db,
                                                     s3_bucket=self.s3,
                                                     notification_queue=self.sqs.notification_queue,
-                                                    lambda_role=self.iam.lambda_role)
+                                                    lambda_role=self.iam.lambda_role,
+                                                    DB_CREDS=DB_CREDS,
+                                                    vpc=self.vpc
+                                                    )
 
         # Set up CloudWatch monitoring
         lambda_functions = [
@@ -131,12 +125,12 @@ class infra_stack(NestedStack):
             self.lambda_api.update_task_lambda,
             self.lambda_api.delete_task_lambda,
             self.lambda_api.upload_attachment_lambda,
-            self.sqs.notification_processor
+            #self.sqs.notification_processor
         ]
 
         self.cloudwatch = CloudWatchConstruct(self, "CloudWatch",
                                               api=self.lambda_api.api,
                                               lambda_functions=lambda_functions,
                                               dynamodb_table=self.dynamo_db,
-                                              s3_bucket=self.s3,
+                                            #   s3_bucket=self.s3,
                                               sqs_queue=self.sqs.notification_queue)

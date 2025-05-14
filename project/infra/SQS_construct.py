@@ -34,36 +34,39 @@ class SQSConstruct(Construct):
         # Create notification queue with DLQ configuration
         self.notification_queue = sqs.Queue(
             self, "NotificationQueue",
+            queue_name="NotificationQueue.fifo",
+            fifo=True,
+            content_based_deduplication=True,
             visibility_timeout=Duration.seconds(300),
             retention_period=Duration.days(4),
             removal_policy=RemovalPolicy.DESTROY,
             dead_letter_queue=sqs.DeadLetterQueue(
-                max_receive_count=3,  # After 3 failed processing attempts, send to DLQ
+                max_receive_count=5,  # After 3 failed processing attempts, send to DLQ
                 queue=self.dlq
-            )
+            ),
+            
         )
 
         # Create SNS Topic for task events
-        self.task_events_topic = sns.Topic(
-            self, "TaskEventsTopic",
-            display_name="Task Management Events"
-        )
+        # self.task_events_topic = sns.Topic(
+        #     self, "TaskEventsTopic",
+        #     display_name="Task Management Events"
+        # )
 
-        # Subscribe the SQS queue to the SNS topic
-        self.task_events_topic.add_subscription(
-            sns_subs.SqsSubscription(self.notification_queue)
-        )
+        # # Subscribe the SQS queue to the SNS topic
+        # self.task_events_topic.add_subscription(
+        #     sns_subs.SqsSubscription(self.notification_queue)
+        # )
 
-        # Create notification processor Lambda
+        #Create notification processor Lambda
         self.notification_processor = lambda_.Function(
             self, "NotificationProcessor",
-            runtime=lambda_.Runtime.PYTHON_3_9,
-            handler="process_notifications.handler",
-            code=lambda_.Code.from_asset("project/lambda/notifications"),
+            runtime=lambda_.Runtime.PYTHON_3_10,
+            handler="main.handler",
+            code=lambda_.Code.from_asset("project/lambda_functions/notifications"),
             timeout=Duration.seconds(60),
             environment={
-                "SQS_QUEUE_URL": self.notification_queue.queue_url,
-                "SNS_TOPIC_ARN": self.task_events_topic.topic_arn
+                "SQS_QUEUE_URL": self.notification_queue.queue_url
             },
             role=lambda_role
         )

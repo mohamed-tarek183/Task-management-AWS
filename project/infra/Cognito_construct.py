@@ -62,16 +62,12 @@ class CognitoConstruct(Construct):
                 callback_urls=["http://localhost:3000/callback"]  # Update with your frontend URL
             )
         )
-
-        # Create User Pool Domain with unique name
-        import time
-        # Generate a timestamp-based unique identifier
-        unique_id = int(time.time())
+       
 
         self.domain = self.user_pool.add_domain(
             "CognitoDomain",
             cognito_domain=cognito.CognitoDomainOptions(
-                domain_prefix=f"task-manager-app-{unique_id}"  # Must be unique across AWS
+                domain_prefix="task-manager-app-dev"
             )
         )
 

@@ -91,3 +91,39 @@ class IAMConstruct(Construct):
                 resources=["*"]  # Restrict this to specific SQS ARN in production
             )
         )
+
+        self.lambda_role.add_to_policy(iam.PolicyStatement(
+        effect=iam.Effect.ALLOW,
+        actions=[
+            "ec2:CreateNetworkInterface",
+            "ec2:DescribeNetworkInterfaces",
+            "ec2:DeleteNetworkInterface"
+        ],
+        resources=["*"]
+    ))
+        
+        self.lambda_role.add_to_policy(iam.PolicyStatement(
+        effect=iam.Effect.ALLOW,
+        actions=[
+            "dynamodb:GetItem",
+            "dynamodb:PutItem",
+            "dynamodb:Scan",
+            "dynamodb:Query",
+            "dynamodb:BatchGetItem",
+            "dynamodb:BatchWriteItem"
+        ],
+        resources=["*"]
+    ))
+
+# Add permissions for S3
+        self.lambda_role.add_to_policy(iam.PolicyStatement(
+            effect=iam.Effect.ALLOW,
+            actions=[
+                "s3:GetObject",
+                "s3:PutObject",
+                "s3:ListBucket"
+            ],
+            resources=["*"]
+        ))
+
+        
