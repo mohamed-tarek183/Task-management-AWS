@@ -78,10 +78,6 @@ def fetch_tasks_from_dynamodb(task_ids):
 
 def main(event, context):
     """Main Lambda handler function with improved error handling"""
-    # Log the incoming event for debugging
-    logger.info("Processing event:")
-    logger.info(json.dumps(event, indent=2))
-    
     conn = None
     try:
         # Get database connection
@@ -93,6 +89,19 @@ def main(event, context):
         
         # Fetch task IDs for the user
         task_ids = fetch_task_ids(conn, user_id)
+        if len(task_ids)==0:
+             return {
+            "statusCode": 200,
+            "headers": {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*"  
+            },
+            "body": json.dumps({
+                "count": 0
+            })
+        }
+
+
         logger.info(f"Found {len(task_ids)} tasks for user")
         
         # Fetch task details from DynamoDB
@@ -101,10 +110,11 @@ def main(event, context):
         # Return successful response
         return {
             "statusCode": 200,
-            "headers": {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*"  # For CORS support
-            },
+            'headers': {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Credentials': 'true',
+            'Content-Type': 'application/json'
+        },
             "body": json.dumps({
                 "tasks": items,
                 "count": len(items)
@@ -116,7 +126,11 @@ def main(event, context):
         logger.error(f"Authorization error: {str(e)}")
         return {
             "statusCode": 401,
-            "headers": {"Content-Type": "application/json"},
+            'headers': {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Credentials': 'true',
+            'Content-Type': 'application/json'
+        },
             "body": json.dumps({"error": "Unauthorized. Valid authentication required."})
         }
     
@@ -125,7 +139,11 @@ def main(event, context):
         logger.error(f"Database connection error: {str(e)}")
         return {
             "statusCode": 503,
-            "headers": {"Content-Type": "application/json"},
+           'headers': {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Credentials': 'true',
+            'Content-Type': 'application/json'
+        },
             "body": json.dumps({"error": "Service temporarily unavailable. Please try again later."})
         }
     
@@ -136,12 +154,15 @@ def main(event, context):
         logger.error(traceback.format_exc())
         return {
             "statusCode": 500,
-            "headers": {"Content-Type": "application/json"},
+          'headers': {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Credentials': 'true',
+            'Content-Type': 'application/json'
+        },
             "body": json.dumps({"error": "An unexpected error occurred"})
         }
     
     finally:
-        # Ensure database connection is closed properly
         if conn:
             try:
                 conn.close()

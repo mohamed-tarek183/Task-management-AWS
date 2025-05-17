@@ -11,6 +11,11 @@ def main(event, context):
         if not task_id:
             return {
                 "statusCode": 400,
+                'headers': {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Credentials': 'true',
+            'Content-Type': 'application/json'
+        },
                 "body": json.dumps({"error": "Missing task ID in path parameters"})
             }
 
@@ -19,26 +24,44 @@ def main(event, context):
         if "title" not in body:
             return {
                 "statusCode": 400,
+                'headers': {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Credentials': 'true',
+            'Content-Type': 'application/json'
+        },
                 "body": json.dumps({"error": "Missing required field: title"})
             }
 
         response = table.update_item(
             Key={"task_id": task_id},
-            UpdateExpression="SET title = :title, completed = :completed",
+            UpdateExpression="SET title = :title, completed = :completed , dueDate=:dueDate , priority=:priority , description=:description",
             ExpressionAttributeValues={
                 ":title": body["title"],
-                ":completed": body.get("completed", False)
+                ":completed": body["completed"],
+                ":dueDate":body["dueDate"],
+                ":priority":body["priority"],
+                ":description":body["description"]
             },
             ReturnValues="ALL_NEW"
         )
 
         return {
             "statusCode": 200,
+            'headers': {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Credentials': 'true',
+            'Content-Type': 'application/json'
+        },
             "body": json.dumps(response["Attributes"])
         }
 
     except Exception as e:
         return {
             "statusCode": 500,
+            'headers': {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Credentials': 'true',
+            'Content-Type': 'application/json'
+        },
             "body": json.dumps({"error": str(e)})
         }

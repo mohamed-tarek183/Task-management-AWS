@@ -32,9 +32,7 @@ class CognitoConstruct(Construct):
             standard_attributes=cognito.StandardAttributes(
               email=cognito.StandardAttribute(required=True, mutable=True),
               given_name=cognito.StandardAttribute(required=True, mutable=True),
-              family_name=cognito.StandardAttribute(required=True, mutable=True),
-              gender=cognito.StandardAttribute(required=True, mutable=True),
-              birthdate=cognito.StandardAttribute(required=True, mutable=True),
+              family_name=cognito.StandardAttribute(required=True, mutable=True)
             ),
             password_policy=cognito.PasswordPolicy(
                 min_length=8,
@@ -59,7 +57,7 @@ class CognitoConstruct(Construct):
                     implicit_code_grant=True
                 ),
                 scopes=[cognito.OAuthScope.EMAIL, cognito.OAuthScope.OPENID, cognito.OAuthScope.PROFILE],
-                callback_urls=["http://localhost:3000/callback"]  # Update with your frontend URL
+                callback_urls=["http://localhost:3000/callback"]
             )
         )
        
@@ -67,7 +65,7 @@ class CognitoConstruct(Construct):
         self.domain = self.user_pool.add_domain(
             "CognitoDomain",
             cognito_domain=cognito.CognitoDomainOptions(
-                domain_prefix="task-manager-app-dev"
+                domain_prefix="task-master-app-dev"
             )
         )
 

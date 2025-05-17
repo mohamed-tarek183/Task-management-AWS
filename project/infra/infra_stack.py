@@ -132,5 +132,5 @@ class infra_stack(NestedStack):
                                               api=self.lambda_api.api,
                                               lambda_functions=lambda_functions,
                                               dynamodb_table=self.dynamo_db,
-                                            #   s3_bucket=self.s3,
+                                              #s3_bucket=self.s3,
                                               sqs_queue=self.sqs.notification_queue)

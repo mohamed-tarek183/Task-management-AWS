@@ -143,9 +143,17 @@ class LambdaApiGatewayConstruct(Construct):
             rest_api_name="Task Manager API",
             description="API for Task Management System",
             default_cors_preflight_options=apigateway.CorsOptions(
-                allow_origins=apigateway.Cors.ALL_ORIGINS,
-                allow_methods=apigateway.Cors.ALL_METHODS,
-                allow_headers=["Content-Type", "Authorization", "X-Amz-Date", "X-Api-Key"]
+                allow_origins=apigateway.Cors.ALL_ORIGINS,        # Allow all origins, change to specific if you want
+                allow_methods=apigateway.Cors.ALL_METHODS,        # Allow all HTTP methods (GET, POST, etc)
+                allow_headers=[
+                    "Content-Type",
+                    "Authorization",
+                    "X-Amz-Date",
+                    "X-Api-Key",
+                    "X-Amz-Security-Token",
+                    "X-Amz-User-Agent"
+                ],
+                allow_credentials=True   # Optional: allow cookies, authorization headers
             )
         )
 

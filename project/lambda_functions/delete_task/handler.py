@@ -2,7 +2,9 @@ import json
 import boto3
 import os
 import pg8000
+s3 = boto3.client('s3')
 dynamodb = boto3.resource("dynamodb")
+S3_BUCKET = os.environ.get('S3_BUCKET')
 table = dynamodb.Table(os.environ["DYNAMO_TABLE"])
 db_host = os.environ['DB_HOST']
 db_name = os.environ['DB_NAME']
@@ -23,6 +25,18 @@ def main(event, context):
     
     task_id = event["pathParameters"]["task_id"]
     table.delete_item(Key={"task_id": task_id})
+    response = s3.list_objects_v2(Bucket=S3_BUCKET, Prefix=f"{task_id}/")
+
+    if 'Contents' not in response:
+        return
+    objects_to_delete = [{'Key': obj['Key']} for obj in response['Contents']]
+
+    # Delete objects in batch (up to 1000 per call)
+    delete_response = s3.delete_objects(
+        Bucket=S3_BUCKET,
+        Delete={'Objects': objects_to_delete}
+    )
+
 
     cur.execute("DELETE FROM user_tasks WHERE task_id = %s", (task_id,))
 
@@ -35,4 +49,9 @@ def main(event, context):
     return {
         "statusCode": 200,
         "body": json.dumps({"message": f"Task {task_id} deleted"}),
+        "headers": {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Credentials': 'true',
+             "Content-Type": "application/json"
+        }
     }

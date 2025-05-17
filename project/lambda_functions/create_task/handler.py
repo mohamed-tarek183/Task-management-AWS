@@ -33,12 +33,18 @@ def main(event, context):
         
         user_id = event['requestContext']['authorizer']['claims']['sub']
         title=body["title"]
+        desc=body["description"]
+        prio=body["priority"]
+        date=body["dueDate"]
         task_id = str(uuid.uuid4())
 
        
         item = {
             "task_id": task_id,
             "title": title,
+            "description":desc,
+            "priority":prio,
+            "dueDate":date,
             "completed": False
         }
 
@@ -52,11 +58,21 @@ def main(event, context):
         
         return {
             "statusCode": 201,
+            'headers': {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Credentials': 'true',
+            'Content-Type': 'application/json'
+        },
             "body": json.dumps(item)
         }
 
     except Exception as e:
         return {
             "statusCode": 500,
+            'headers': {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Credentials': 'true',
+            'Content-Type': 'application/json'
+        },
             "body": json.dumps({"error": str(e)})
         }

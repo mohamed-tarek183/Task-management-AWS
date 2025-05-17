@@ -33,6 +33,18 @@ class IAMConstruct(Construct):
         # Add S3 read/write permissions if bucket provided
         if s3_bucket:
             s3_bucket.grant_read_write(self.ec2_role)
+            
+            s3_bucket.add_cors_rule(
+            allowed_methods=[
+                s3.HttpMethods.GET,
+                s3.HttpMethods.PUT,
+                s3.HttpMethods.POST,
+            ],
+            allowed_origins=["*"],  # your frontend origin
+            allowed_headers=["*"],
+            exposed_headers=["ETag"],
+            max_age=3000,
+        )
 
         # Add DynamoDB permissions if table provided
         if dynamodb_table:
