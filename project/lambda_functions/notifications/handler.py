@@ -19,9 +19,10 @@ def main(event, context):
 
             # The Email message
             message = (
-                "Your task was updated successfully.\n\n"
-                f"Title: {body.get('task_name')}\n"
-                f"Completion status: {completion_str}"
+                    "Your task was updated successfully.\n\n"
+                    "Current task details:\n"
+                    f"Title: {task_name}\n"
+                    f"Completion status: {completion_str}"
             )
 
             response = ses.send_email(
