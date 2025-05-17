@@ -20,7 +20,7 @@ def main(event, context):
             # The Email message
             message = (
                 "Your task was updated successfully.\n\n"
-                f"Title: {body.get('title')}\n"
+                f"Title: {body.get('task_name')}\n"
                 f"Completion status: {completion_str}"
             )
 
