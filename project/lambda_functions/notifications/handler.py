@@ -1,17 +1,38 @@
+import json
 import boto3
 import os
 
-sqs = boto3.client('sqs', region_name='us-east-1')  
-ses = boto3.client('ses', region_name='us-east-1')
-SQS_URL=os.environ['SQS_QUEUE_URL']
+ses = boto3.client('ses')
 
 def main(event, context):
+    print("Lambda triggered. Event:", json.dumps(event))  
 
-    response=sqs.receive_message(
-         QueueUrl=SQS_URL,
-         WaitTimeSeconds=10,
-         AttributeNames=['All'],       # Optional: to get extra metadata
-         MessageAttributeNames=['All']
-    )
+    for record in event['Records']:
+        try:
+            body = json.loads(record['body'])
+            print("Parsed body:", body)  
+            
+            # Extracting the data (Email, task name, and completion status)
+            email = body['email']
+            task_name = body['task_name']
+            completion_str = "Complete" if body.get("completed") else "In Progress"
 
-    message=response.get("Messages",[])
+            # The Email message
+            message = (
+                "Your task was updated successfully.\n\n"
+                f"Title: {body.get('title')}\n"
+                f"Completion status: {completion_str}"
+            )
+
+            response = ses.send_email(
+                Source=os.environ['SENDER_EMAIL'],
+                Destination={'ToAddresses': [email]},
+                Message={
+                    'Subject': {'Data': 'Your Task Has Been Updated'},
+                    'Body': {'Text': {'Data': message}}
+                }
+            )
+            print("Email sent to:", email, "Response:", response)
+
+        except Exception as e:
+            print("Failed to process record or send email:", e)
