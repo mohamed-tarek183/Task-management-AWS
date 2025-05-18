@@ -17,8 +17,8 @@ from .RDS_construct import RDSInstanceConstruct
 from .IAM_construct import IAMConstruct
 from .Cognito_construct import CognitoConstruct
 from .Lambda_APIGateway_construct import LambdaApiGatewayConstruct
-from .SQS_construct import SQSConstruct
 from .CloudWatch_construct import CloudWatchConstruct
+from .Notification_Construct import NotificationL3Construct
 
 
 class infra_stack(NestedStack):
@@ -61,12 +61,15 @@ class infra_stack(NestedStack):
                                           )
 
 
-        # Add VPC Endpoints for S3 and DynamoDB
+        # Add VPC Endpoints for S3, DynamoDB and SQS 
         self.vpc.add_gateway_endpoint("S3_Endpoint",
                                       service=ec2.GatewayVpcEndpointAwsService.S3)
 
         self.vpc.add_gateway_endpoint("DynamoDB_Endpoint",
                                       service=ec2.GatewayVpcEndpointAwsService.DYNAMODB)
+        
+        self.vpc.add_interface_endpoint("SQS_Endpoint",
+                                        service=ec2.InterfaceVpcEndpointAwsService.SQS)
 
         # Create IAM roles and policies
         self.iam = IAMConstruct(self, "IAM",
@@ -96,28 +99,33 @@ class infra_stack(NestedStack):
         # Create Cognito User Pool for authentication
         self.cognito = CognitoConstruct(self, "Cognito")
 
-        # Create SQS for notifications
-        self.sqs = SQSConstruct(self, "SQS",
-                                lambda_role=self.iam.lambda_role)
         
-
         DB_CREDS={"DB_HOST":self.rds.DB_HOST,
                   "DB_NAME":self.rds.DB_NAME,
                   "DB_USER":self.rds.DB_USER,
                   "DB_PASS":self.rds.DB_PASS}
+        
+        # NOTIFICATIONS CONSTRUCT 
+        # Create Notification Construct (Contains all the notification related resources and permissions)
+        self.notification_construct = NotificationL3Construct(
+            self, "NotificationConstruct"
+        )
 
         # Create Lambda functions and API Gateway
         self.lambda_api = LambdaApiGatewayConstruct(self, "LambdaAPI",
                                                     cognito_user_pool=self.cognito.user_pool,
                                                     dynamo_table=self.dynamo_db,
                                                     s3_bucket=self.s3,
-                                                    notification_queue=self.sqs.notification_queue,
+                                                    notification_queue=self.notification_construct.queue,
                                                     lambda_role=self.iam.lambda_role,
                                                     DB_CREDS=DB_CREDS,
                                                     vpc=self.vpc
                                                     )
+        
+        # GRANT SEND PERMISSIONS TO THE update_task_lambda (FOR NOTIFICATION SQS QUEUE)
+        self.notification_construct.queue.grant_send_messages(self.lambda_api.update_task_lambda)
 
-        # Set up CloudWatch monitoring
+        # Set up CloudWatch monitoring 
         lambda_functions = [
             self.lambda_api.get_tasks_lambda,
             self.lambda_api.get_task_lambda,
@@ -125,12 +133,14 @@ class infra_stack(NestedStack):
             self.lambda_api.update_task_lambda,
             self.lambda_api.delete_task_lambda,
             self.lambda_api.upload_attachment_lambda,
-            #self.sqs.notification_processor
+            self.notification_construct.notification_lambda
         ]
 
         self.cloudwatch = CloudWatchConstruct(self, "CloudWatch",
                                               api=self.lambda_api.api,
                                               lambda_functions=lambda_functions,
                                               dynamodb_table=self.dynamo_db,
-                                              #s3_bucket=self.s3,
-                                              sqs_queue=self.sqs.notification_queue)
+                                            #   s3_bucket=self.s3,
+                                              sqs_queue=self.notification_construct.queue,)
+        
+       

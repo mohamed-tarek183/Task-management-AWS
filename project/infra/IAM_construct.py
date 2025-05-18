@@ -92,18 +92,24 @@ class IAMConstruct(Construct):
             )
         )
 
-        # Add SQS permissions
-        self.lambda_role.add_to_policy(
-            iam.PolicyStatement(
-                actions=[
-                    "sqs:SendMessage",
-                    "sqs:ReceiveMessage",
-                    "sqs:DeleteMessage",
-                    "sqs:GetQueueAttributes"
-                ],
-                resources=["*"]  # Restrict this to specific SQS ARN in production
-            )
-        )
+        '''
+        The SQS were permissions were removed from the role since only one lambda function is using SQS
+        ('update_task' function) and the notification lambda function already has its own dedicated
+        role in the NotifcationConstruct. The send permission is now granted to the update_task lambda function
+        in the infra stack to allow it to only send messages to the notification SQS queue.
+        '''
+        # # Add SQS permissions
+        # self.lambda_role.add_to_policy(
+        #     iam.PolicyStatement(
+        #         actions=[
+        #             "sqs:SendMessage",
+        #             "sqs:ReceiveMessage",
+        #             "sqs:DeleteMessage",
+        #             "sqs:GetQueueAttributes"
+        #         ],
+        #         resources=["*"]  # Restrict this to specific SQS ARN in production
+        #     )
+        # )
 
         self.lambda_role.add_to_policy(iam.PolicyStatement(
         effect=iam.Effect.ALLOW,
