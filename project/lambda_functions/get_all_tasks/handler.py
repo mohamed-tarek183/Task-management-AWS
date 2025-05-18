@@ -51,8 +51,11 @@ def fetch_task_ids(conn, user_id):
     try:
         cur = conn.cursor()
         cur.execute("SELECT task_id FROM user_tasks WHERE user_id=%s", (user_id,))
-        rows = cur.fetchall()
+        rows = cur.fetchall() or []
         cur.close()
+        if not rows:
+            logger.info("No tasks found for user")
+            return []
         return [str(row[0]) for row in rows]
     except Exception as e:
         logger.error(f"Database query error: {str(e)}")
@@ -85,11 +88,10 @@ def main(event, context):
         
         # Get user ID from request context
         user_id = get_user_id(event)
-        logger.info(f"Processing request for user_id: {user_id}")
         
         # Fetch task IDs for the user
         task_ids = fetch_task_ids(conn, user_id)
-        if len(task_ids)==0:
+        if not task_ids:
              return {
             "statusCode": 200,
             "headers": {
@@ -102,7 +104,7 @@ def main(event, context):
         }
 
 
-        logger.info(f"Found {len(task_ids)} tasks for user")
+
         
         # Fetch task details from DynamoDB
         items = fetch_tasks_from_dynamodb(task_ids)

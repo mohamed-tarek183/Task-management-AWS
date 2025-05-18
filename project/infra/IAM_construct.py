@@ -35,12 +35,14 @@ class IAMConstruct(Construct):
             s3_bucket.grant_read_write(self.ec2_role)
             
             s3_bucket.add_cors_rule(
-            allowed_methods=[
+         allowed_methods=[
                 s3.HttpMethods.GET,
                 s3.HttpMethods.PUT,
                 s3.HttpMethods.POST,
+                s3.HttpMethods.DELETE,
+                s3.HttpMethods.HEAD
             ],
-            allowed_origins=["*"],  # your frontend origin
+            allowed_origins=["*"], 
             allowed_headers=["*"],
             exposed_headers=["ETag"],
             max_age=3000,
@@ -60,7 +62,6 @@ class IAMConstruct(Construct):
             description="Role for Lambda functions in Task Management System"
         )
 
-        # Add appropriate permissions to Lambda role
         if s3_bucket:
             s3_bucket.grant_read_write(self.lambda_role)
 

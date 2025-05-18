@@ -3,16 +3,18 @@ import os
 import boto3
 from botocore.exceptions import ClientError
 
-# Initialize AWS clients outside the handler for performance
-s3_client = boto3.client('s3')
-dynamodb = boto3.resource("dynamodb")
 
-# Environment variables
-S3_BUCKET = os.environ.get('S3_BUCKET')
-DYNAMO_TABLE = os.environ.get('DYNAMO_TABLE')
-table = dynamodb.Table(DYNAMO_TABLE)
 
 def main(event, context):
+    dynamodb = boto3.resource("dynamodb")
+    S3_BUCKET = os.environ.get('S3_BUCKET')
+    DYNAMO_TABLE = os.environ.get('DYNAMO_TABLE')
+    table = dynamodb.Table(DYNAMO_TABLE)
+    s3_client = boto3.client(
+    's3',
+    region_name='eu-central-1',
+    endpoint_url='https://s3.eu-central-1.amazonaws.com'  
+)
     try:
         # Validate required path parameter
         path_params = event.get("pathParameters")
