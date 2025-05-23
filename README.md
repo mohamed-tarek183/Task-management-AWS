@@ -1,4 +1,4 @@
-![Architecture](https://github.com/user-attachments/assets/bf0f30e5-51d4-44ff-878d-fc40aa06335e)# Welcome to your CDK Python project!
+Welcome to your CDK Python project!
 
 # Here is the project Architecture 
 ![Architecture](https://github.com/user-attachments/assets/4ca7c353-3549-46f0-a481-694ba9bae281)
